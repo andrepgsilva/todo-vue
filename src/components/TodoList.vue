@@ -1,84 +1,59 @@
 <template>
   <div>
-    <input 
-        type="text"
-        class="todo-input" 
-        placeholder="What needs to be done"
-        v-model="newTodo"
-        @keyup.enter="addTodo"
-    >
+    <input
+      type="text"
+      class="todo-input"
+      placeholder="What needs to be done"
+      v-model="newTodo"
+      @keyup.enter="addTodo"
+    />
 
-    <transition-group 
-        enter-active-class="animated fadeInUp"
-        leave-active-class="animated fadeOutDown"
+    <transition-group
+      enter-active-class="animated fadeInUp"
+      leave-active-class="animated fadeOutDown"
     >
-        <todo-item 
-            v-for="todo in todosFiltered" 
-            :key="todo.id" 
-            :todo="todo" 
-            :checkAll="!anyRemaining" 
-            @removedTodo="removeTodo" 
-            @finishedEdit="finishedEdit"
-        >
-        </todo-item>
+      <todo-item
+        v-for="todo in todosFiltered"
+        :key="todo.id"
+        :todo="todo"
+        :checkAll="!anyRemaining"
+      ></todo-item>
     </transition-group>
 
     <div class="extra-container">
-        <div>
-            <label>
-                <input 
-                    type="checkbox"
-                    :checked="! anyRemaining"
-                    @change="checkAllTodos"
-                >
-                Check All
-            </label>
-        </div>
-        <div>
-            {{ remaining }} items left
-        </div>
+      <div>
+        <todo-check-all :anyRemaining="anyRemaining"></todo-check-all>
+      </div>
+      <todo-items-remaining :remaining="remaining"></todo-items-remaining>
     </div>
     <div class="extra-container">
-        <div>
-            <button 
-                :class="{ active: filter == 'all' }"
-                @click="filter = 'all'"
-            >
-                All
-            </button>
-            <button 
-                :class="{ active: filter == 'active' }" 
-                @click="filter = 'active'"
-            >
-                Active
-            </button>
-            <button 
-                :class="{ active: filter == 'completed' }" 
-                @click="filter = 'completed'"
-            >
-                Completed
-            </button>
-        </div>
+      <todo-filtered></todo-filtered>
 
-        <transition name="fade">
-            <button 
-                v-if="showClearCompletedButton"
-                @click="clearCompleted"
-            >
-                Clear Completed
-            </button>
-        </transition>
+    <transition name="fade">
+      <todo-clear-completed
+        :showClearCompletedButton="showClearCompletedButton"
+      >
+      </todo-clear-completed>
+    </transition>
     </div>
   </div>
 </template>
 
 <script>
 import TodoItem from './TodoItem';
+import TodoItemsRemaining from './TodoItemsRemaining';
+import TodoCheckAll from './TodoCheckAll';
+import TodoFiltered from './TodoFiltered';
+import TodoClearCompleted from './TodoClearCompleted';
 
 export default {
   name: 'todo-list',
   components: {
-      TodoItem,
+    TodoItem,
+    TodoItemsRemaining,
+    TodoCheckAll,
+    TodoFiltered,
+    TodoClearCompleted,
   },
 
   data() {
@@ -102,6 +77,23 @@ export default {
         beforeEditCache: '',
         filter: 'all',
     }
+  },
+
+
+  created() {
+      window.eventBus.$on('removedTodo', (index) => this.removeTodo(index));
+      window.eventBus.$on('finishedEdit', (data) => this.finishedEdit(data));
+      window.eventBus.$on('checkAllChanged', (checked) => this.checkAllTodos(checked));
+      window.eventBus.$on('filterChanged', (filter) => this.filter = filter);
+      window.eventBus.$on('clearCompletedTodos', () => this.clearCompleted());
+  },
+
+  beforeDestroy() {
+      window.eventBus.$off('removedTodo', (index) => this.removeTodo(index));
+      window.eventBus.$off('finishedEdit', (data) => this.finishedEdit(data));
+      window.eventBus.$off('checkAllChanged', (checked) => this.checkAllTodos(checked));
+      window.eventBus.$off('filterChanged', (filter) => this.filter = filter);
+      window.eventBus.$off('clearCompletedTodos', () => this.clearCompleted());
   },
 
   computed: {
@@ -167,109 +159,110 @@ export default {
 </script>
 
 <style lang="scss">
-    @import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css");
 
-    .todo-item-left {
-        display: flex;
-        align-items: center;
-    }
+.todo-item-left {
+  display: flex;
+  align-items: center;
+}
 
-    .todo-input {
-        width: 100%;
-        padding: 10px 18px;
-        font-size: 18px;
-        margin-bottom: 16px;
+.todo-input {
+  width: 100%;
+  padding: 10px 18px;
+  font-size: 18px;
+  margin-bottom: 16px;
 
-        &:focus {
-            outline: 0;
-        }
-    }
+  &:focus {
+    outline: 0;
+  }
+}
 
-    .todo-item {
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        animation-duration: 0.3s;
-    }
+.todo-item {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation-duration: 0.3s;
+}
 
-    .remove-item {
-        cursor: pointer;
-        margin-left: 14px;
-        &:hover {
-            color: #000;
-        }
-    }
+.remove-item {
+  cursor: pointer;
+  margin-left: 14px;
+  &:hover {
+    color: #000;
+  }
+}
 
-    .todo-item-edit {
-        font-size: 24px;
-        color: #2c3e50;
-        margin-left: 12px;
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        font-family: 'Avenir', Helvetica, Arial, sans-serif;
+.todo-item-edit {
+  font-size: 24px;
+  color: #2c3e50;
+  margin-left: 12px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
 
-        &:focus {
-            outline: none;
-        }
-    }
+  &:focus {
+    outline: none;
+  }
+}
 
-    .todo-item-label {
-        padding: 10px;
-        border: 1px solid white;
-        margin-left: 12px;
-    }
+.todo-item-label {
+  padding: 10px;
+  border: 1px solid white;
+  margin-left: 12px;
+}
 
-    .noselect {
-        -webkit-touch-callout: none; /* iOS Safari */
-        -webkit-user-select: none; /* Safari */
-        -khtml-user-select: none; /* Konqueror HTML */
-        -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-        user-select: none; /* Non-prefixed version, currently */
-    }
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently */
+}
 
-    .completed {
-        text-decoration: line-through;
-        color: grey;
-    }
+.completed {
+  text-decoration: line-through;
+  color: grey;
+}
 
-    .extra-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 16px;
-        border-top: 1px solid lightgrey;
-        padding-top: 14px;
-        margin-bottom: 14px;
-    }
+.extra-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  border-top: 1px solid lightgrey;
+  padding-top: 14px;
+  margin-bottom: 14px;
+}
 
-    button {
-        font-size: 14px;
-        background-color: #fff;
-        appearance: none;
+button {
+  font-size: 14px;
+  background-color: #fff;
+  appearance: none;
 
-        &:hover {
-            background: lightgreen;
-        }
+  &:hover {
+    background: lightgreen;
+  }
 
-        &:focus {
-            outline: none;
-        }
-    }
+  &:focus {
+    outline: none;
+  }
+}
 
-    .active {
-        background: lightgreen;
-    }
+.active {
+  background: lightgreen;
+}
 
-    // CSS Transitions
-    .fade-enter-active, .fade-leave-active {
-        transition: opacity .3s;
-    }
+// CSS Transitions
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
 
-    .fade-enter, .fade-leave-to {
-        opacity: 0;
-    }
-
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

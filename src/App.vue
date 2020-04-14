@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="container">
-    <img alt="Vue logo" src="./assets/logo.png" class="logo">
+    <img alt="Vue logo" src="./assets/logo.png" class="logo" />
     <todo-list></todo-list>
   </div>
 </template>
@@ -19,7 +19,6 @@
 </script>
 
 <style>
-
 * {
   box-sizing: border-box;
 }
