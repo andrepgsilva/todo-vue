@@ -72,13 +72,13 @@ export default {
 
     watch: {
         checkAll() {
-            this.completed = this.checkAll ? true : false;
+            this.completed = this.checkAll ? true : this.todo.completed;
         }
     },
 
     methods: {
-        removeTodo(id) {
-            window.eventBus.$emit('removedTodo', id)
+        removeTodo() {
+            this.$store.dispatch('deleteTodo', this.id);
         },
 
         editTodo() {
@@ -92,12 +92,13 @@ export default {
             }
 
             this.editing = false;
-            window.eventBus.$emit('finishedEdit', {
+
+            this.$store.dispatch('updateTodo', {
                 'id': this.id,
                 'title': this.title,
                 'completed': this.completed,
                 'editing': this.editing,
-            })
+            });
         },
 
         cancelEdit() {
@@ -112,12 +113,14 @@ export default {
         handlePluralize() {
             this.title = this.title + 's';
 
-            window.eventBus.$emit('finishedEdit', {
+            const index = this.$store.state.todos.findIndex((item) => item.id == this.id);
+            
+            this.$store.state.todos.splice(index, 1, {
                 'id': this.id,
                 'title': this.title,
                 'completed': this.completed,
                 'editing': this.editing,
-            })
+            });
         }
     },
 
