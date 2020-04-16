@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import axios from 'axios';
+import db from '../firebase';
 
 Vue.use(Vuex);
 
@@ -8,22 +9,10 @@ axios.defaults.baseURL = 'http://todo-vue-laravel.test/api';
 
 export const store = new Vuex.Store({
     state: {
+        loading: true,
         filter: 'all',
 
-        todos: [
-            // {
-            //     'id': 1,
-            //     'title': 'Finish Vue Screencast',
-            //     'completed': false,
-            //     'editing': false,
-            // },
-            // {
-            //     'id': 2,
-            //     'title': 'Take over world',
-            //     'completed': false,
-            //     'editing': false,
-            // }
-        ],
+        todos: [],
     },
     getters: {
         remaining(state) {
@@ -101,85 +90,112 @@ export const store = new Vuex.Store({
 
     actions: {
         retrieveTodos(context) {
-            axios.get('/todos')
-                .then(response => {
-                    context.commit('retrieveTodos', response.data);
-                })
-                .catch(error => {
-                    console.log(error);
+            context.state.loading = true;
+
+            db.collection('todos').get()
+            .then(querySnapshot => {
+                let tempTodos = [];
+
+                querySnapshot.forEach(doc => {
+                    const data = {
+                        id: doc.id,
+                        title: doc.data().title,
+                        completed: doc.data().completed,
+                        timestamp: doc.data().timestamp,
+                    };
+
+                    tempTodos.push(data);
                 });
+
+                context.state.loading = false;
+                
+                const tempTodosSorted = tempTodos.sort((a, b) => {
+                    return a.timestamp.seconds - b.timestamp.seconds;
+                });
+
+                context.commit('retrieveTodos', tempTodosSorted);
+
+            })
+            .catch(error => {
+                console.log(error)
+            });
         },
 
         addTodo(context, todo) {
-            axios.post('todos', {
-                'title': todo.title,
-                'completed': false
+            db.collection('todos').add({
+                title: todo.title,
+                completed: false,
+                timestamp: new Date(),
             })
-                .then(response => {
-                    context.commit('addTodo', response.data);
-                })
-                .catch(error => {
-                    console.log(error);
+            .then(docRef => {
+                context.commit('addTodo', {
+                    id: docRef.id,
+                    title: todo.title,
+                    completed: false,
                 });
+            })
+            .catch(error => {
+                console.log(error);
+            });
         },
 
         updateTodo(context, todo) {
-            axios.patch('todos/' + todo.id, {
-                'title': todo.title,
-                'completed': todo.completed,
+            db.collection('todos').doc(todo.id).set({
+                id: todo.id,
+                title: todo.title,
+                completed: todo.completed,
+                timestamp: new Date(),
             })
-                .then(response => {
-                    context.commit('updateTodo', response.data);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+            .then(() => {
+                context.commit('updateTodo', todo);
+            })
+            .catch(error => {
+                console.log(error);
+            });
         },
 
         checkAll(context, checked) {
-            axios.patch('todos-check-all/', {
-                'completed': checked,
-            })
-                .then(() => {
-                    context.commit('checkAll', checked);
-                })
-                .catch(error => {
-                    console.log(error);
+            db.collection('todos').get()
+                .then(querySnapshot => {
+                    querySnapshot.forEach(doc => {
+                        doc.ref.update({
+                           completed: checked 
+                        })
+                        .then(() => {
+                            context.commit('checkAll', checked);
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        });
+                    });
                 });
 
             context.commit('checkAll', checked);
         },
 
         deleteTodo(context, id) {
-            axios.delete('/todos/' + id)
+            db.collection('todos').doc(id).delete()
                 .then(() => {
                     context.commit('deleteTodo', id);
                 })
                 .catch(error => {
-                    console.log(error);
+                    console.log(error)
                 });
         },
 
         clearCompleted(context) {
-            const completed = store.state.todos
-                    .filter(todo => {
-                        return todo.completed;
-                    })
-                    .map(todo => {
-                        return todo.id;
+            db.collection('todos').where('completed', '==', true).get()
+                .then(querySnapshot => {
+                    querySnapshot.forEach(doc => {
+                        doc.ref.delete()
+                        .then(() => {
+                            context.commit('clearCompleted');
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        })
                     });
-
-            axios.delete('/todos-delete-completed', {
-                data: {
-                    'todos': completed,
-                }
-            })
-                .then(() => {
-                    context.commit('clearCompleted');
                 })
-                .catch(error => {
-                    console.log(error);
-                });
         },
 
         updateFilter(context, filter) {
