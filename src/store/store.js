@@ -46,6 +46,7 @@ export const store = new Vuex.Store({
                 id: todo.id,
                 title: todo.title,
                 completed: false,
+                timestamp: new Date(),
                 editing: false,
             });
         },
@@ -79,8 +80,10 @@ export const store = new Vuex.Store({
             const todoIndex = state.todos.findIndex(todoLocal => {
                 return todoLocal.id == id;
             });
-            
-            state.todos.splice(todoIndex, 1);
+
+            if (todoIndex >= 0) {
+                state.todos.splice(todoIndex, 1);
+            }
         },
 
         retrieveTodos(state, todos) {
@@ -89,6 +92,34 @@ export const store = new Vuex.Store({
     },
 
     actions: {
+        initRealtimeListeners(context) {
+            db.collection("todos").onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const source = change.doc.metadata.hasPendingWrites ? "Local" : "Server";
+
+                        if (source == 'Server') {
+                            context.commit('addTodo', {
+                                id: change.doc.id,
+                                title: change.doc.data().title,
+                                completed: false,
+                            });
+                        }
+                    }
+                    if (change.type === "modified") {
+                        context.commit('updateTodo', {
+                            id: change.doc.id,
+                            title: change.doc.data().title,
+                            completed: change.doc.data().completed,
+                        });
+                    }
+                    if (change.type === "removed") {
+                        context.commit('deleteTodo', change.doc.id);
+                    }
+                });
+            });
+        },
+
         retrieveTodos(context) {
             context.state.loading = true;
 
@@ -144,8 +175,7 @@ export const store = new Vuex.Store({
                 id: todo.id,
                 title: todo.title,
                 completed: todo.completed,
-                timestamp: new Date(),
-            })
+            }, { merge: true })
             .then(() => {
                 context.commit('updateTodo', todo);
             })

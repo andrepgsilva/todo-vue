@@ -64,6 +64,7 @@ export default {
   },
 
   created() {
+    this.$store.dispatch('initRealtimeListeners');
     this.$store.dispatch('retrieveTodos');
   },
 
@@ -186,6 +187,8 @@ button {
   &:focus {
     outline: none;
   }
+
+  padding: 4px;
 }
 
 .active {
