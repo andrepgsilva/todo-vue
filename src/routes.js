@@ -1,6 +1,7 @@
 import App from './App';
 import Register from './components/auth/Register';
 import Login from './components/auth/Login';
+import Logout from './components/auth/Logout';
 import LandingPage from './components/marketing/Landing';
 import About from './components/marketing/About';
 import TestTodosVariable from './components/marketing/TestTodosVariable';
@@ -15,6 +16,9 @@ const routes = [
       path: '/todo',
       name: 'todo',
       component: App,
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/about',
@@ -25,11 +29,22 @@ const routes = [
       path: '/login',
       name: 'login',
       component: Login,
+      meta: {
+        requiresVisitor: true,
+      },
+    },
+    {
+      path: '/logout',
+      name: 'logout',
+      component: Logout,
     },
     {
       path: '/register',
       name: 'register',
       component: Register,
+      meta: {
+        requiresVisitor: true,
+      },
     },
 
     {

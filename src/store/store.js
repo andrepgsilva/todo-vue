@@ -9,6 +9,7 @@ axios.defaults.baseURL = 'http://todo-vue-laravel.test/api';
 
 export const store = new Vuex.Store({
     state: {
+        token: localStorage.getItem('access_token') || null,
         loading: true,
         filter: 'all',
 
@@ -38,6 +39,10 @@ export const store = new Vuex.Store({
         showClearCompletedButton(state) {
             return state.todos.filter(todo => todo.completed).length > 0;
         },
+
+        loggedIn(state) {
+            return state.token != null;
+        }
     },
 
     mutations: {
@@ -89,9 +94,75 @@ export const store = new Vuex.Store({
         retrieveTodos(state, todos) {
             state.todos = todos;
         },
+
+        retrieveToken(state, token) {
+            state.token = token;
+        },
+
+        destroyToken(state) {
+            state.token = null;
+        },
     },
 
     actions: {
+        register(context, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/register/', {
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                })
+                .then(response => {
+                    resolve(response);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+            });
+        },
+
+        destroyToken(context) {
+            if (context.getters.loggedIn) {
+                const token = context.state.token;
+                const headers = { headers: { 'Authorization': `Bearer ${token}` } };
+
+                return new Promise((resolve, reject) => {
+                    axios.post('/logout/', {}, headers)
+                    .then(response => {
+                        localStorage.removeItem('access_token');
+                        context.commit('destroyToken');
+
+                        resolve(response);
+                    })
+                    .catch(error => {
+                        localStorage.removeItem('access_token');
+                        context.commit('destroyToken');
+
+                        reject(error);
+                    });
+                });
+            }
+        },
+
+        retrieveToken(context, credentials) {
+            return new Promise((resolve, reject) => {
+                axios.post('/login', {
+                    username: credentials.username,
+                    password: credentials.password,
+                })
+                .then(response => {
+                    const token = response.data.access_token;
+    
+                    localStorage.setItem('access_token', token);
+                    context.commit('retrieveToken', token);
+                    resolve(response);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+            });
+        },
+
         initRealtimeListeners(context) {
             db.collection("todos").onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
