@@ -105,6 +105,21 @@ export const store = new Vuex.Store({
     },
 
     actions: {
+        retrieveName(context) {
+            const token = context.state.token;
+            const headers = { headers: { 'Authorization': `Bearer ${token}` } };
+
+            return new Promise((resolve, reject) => {
+                axios.get('/user/', headers)
+                .then(response => {
+                    resolve(response);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+            });
+        },
+
         register(context, data) {
             return new Promise((resolve, reject) => {
                 axios.post('/register/', {

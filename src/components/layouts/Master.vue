@@ -9,7 +9,15 @@
             <li v-if="loggedIn"><router-link :to="{ name: 'logout' }">Logout</router-link></li>
         </ul>
 
-        <router-view></router-view>
+        <transition
+          name="router-animation"
+          enter-active-class="animated fadeIn"
+          leave-active-class="animated fadeOut"
+          mode="out-in"
+        >
+          <router-view></router-view>
+        </transition>
+
     </div>
 </template>
 
@@ -24,6 +32,10 @@ export default {
 </script>
 
 <style lang="scss">
+    @import url('~cxlt-vue2-toastr/dist/css/cxlt-vue2-toastr.css');
+    @import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css");
+
+
     * {
         box-sizing: border-box;
         margin: 0;
@@ -39,7 +51,7 @@ export default {
         height: 100vh;
     }
 
-    .flex-center { 
+    .flex-center {
         display: flex;
         justify-content: center;
     }
@@ -102,6 +114,80 @@ export default {
     cursor: pointer;
     &:hover {
       background: darken(#60BD4F, 10%);
+    }
+  }
+
+  .server-error {
+    margin-bottom: 12px;
+    font-size: 16px;
+    padding: 10px 16px;
+    color: #a94442;
+    background: #F3DEDE;
+    border-radius: 4px;
+  }
+
+  .success-message {
+    background-color: #dff0dB;
+    color: #3c763d;
+    margin-bottom: 12px;
+    font-size: 16px;
+    padding: 10px 16px;
+    border-radius: 4px;
+  }
+
+  .form-error {
+    font-size: 16px;
+    color: #a94442;
+  }
+
+  .input-error {
+    border: 1px solid red;
+  }
+
+  .page-wrapper {
+    animation-duration: 0.2s;
+  }
+
+  .lds-ring-container {
+    position: absolute;
+  }
+
+  // CSS Spinning
+  .lds-ring {
+    display: block;
+    margin: auto;
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+  .lds-ring div {
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    // margin: 8px;
+    border: 3px solid grey;
+    border-radius: 50%;
+    animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: grey transparent transparent transparent;
+  }
+  .lds-ring div:nth-child(1) {
+    animation-delay: -0.45s;
+  }
+  .lds-ring div:nth-child(2) {
+    animation-delay: -0.3s;
+  }
+  .lds-ring div:nth-child(3) {
+    animation-delay: -0.15s;
+  }
+  @keyframes lds-ring {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
     }
   }
 </style>

@@ -1,5 +1,9 @@
 <template>
   <div>
+    <div class="name-container">
+      Welcome, {{ name }}
+    </div>
+
     <input
       type="text"
       class="todo-input"
@@ -60,12 +64,17 @@ export default {
         newTodo: '',
         idForTodo: 3,
         beforeEditCache: '',
+        name: '',
     }
   },
 
   created() {
     this.$store.dispatch('initRealtimeListeners');
     this.$store.dispatch('retrieveTodos');
+    this.$store.dispatch('retrieveName')
+      .then(response => {
+        this.name = response.data.name;
+      });
   },
 
   computed: {
@@ -97,151 +106,115 @@ export default {
 </script>
 
 <style lang="scss">
-@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css");
 
-.todo-item-left {
-  display: flex;
-  align-items: center;
-}
-
-.todo-input {
-  width: 100%;
-  padding: 10px 18px;
-  font-size: 18px;
-  margin-bottom: 16px;
-
-  &:focus {
-    outline: 0;
+  .todo-item-left {
+    display: flex;
+    align-items: center;
   }
-}
 
-.todo-item {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  animation-duration: 0.3s;
-}
+  .todo-input {
+    width: 100%;
+    padding: 10px 18px;
+    font-size: 18px;
+    margin-bottom: 16px;
 
-.remove-item {
-  cursor: pointer;
-  margin-left: 14px;
-  &:hover {
-    color: #000;
+    &:focus {
+      outline: 0;
+    }
   }
-}
 
-.todo-item-edit {
-  font-size: 24px;
-  color: #2c3e50;
-  margin-left: 12px;
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-
-  &:focus {
-    outline: none;
+  .todo-item {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation-duration: 0.3s;
   }
-}
 
-.todo-item-label {
-  padding: 10px;
-  border: 1px solid white;
-  margin-left: 12px;
-}
+  .remove-item {
+    cursor: pointer;
+    margin-left: 14px;
+    &:hover {
+      color: #000;
+    }
+  }
 
-.noselect {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Old versions of Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently */
-}
+  .todo-item-edit {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-left: 12px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    font-family: "Avenir", Helvetica, Arial, sans-serif;
 
-.completed {
-  text-decoration: line-through;
-  color: grey;
-}
+    &:focus {
+      outline: none;
+    }
+  }
 
-.extra-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 16px;
-  border-top: 1px solid lightgrey;
-  padding-top: 14px;
-  margin-bottom: 14px;
-}
+  .todo-item-label {
+    padding: 10px;
+    border: 1px solid white;
+    margin-left: 12px;
+  }
 
-button {
-  font-size: 14px;
-  background-color: #fff;
-  appearance: none;
+  .noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently */
+  }
 
-  &:hover {
+  .completed {
+    text-decoration: line-through;
+    color: grey;
+  }
+
+  .extra-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+    border-top: 1px solid lightgrey;
+    padding-top: 14px;
+    margin-bottom: 14px;
+  }
+
+  button {
+    font-size: 14px;
+    background-color: #fff;
+    appearance: none;
+
+    &:hover {
+      background: lightgreen;
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    padding: 4px;
+  }
+
+  .active {
     background: lightgreen;
   }
 
-  &:focus {
-    outline: none;
+  // CSS Transitions
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s;
   }
 
-  padding: 4px;
-}
-
-.active {
-  background: lightgreen;
-}
-
-// CSS Transitions
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
-
-// CSS Spinning
-.lds-ring {
-  display: block;
-  margin: auto;
-  position: relative;
-  width: 80px;
-  height: 80px;
-  margin-bottom: 16px;
-}
-.lds-ring div {
-  box-sizing: border-box;
-  display: block;
-  position: absolute;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border: 8px solid grey;
-  border-radius: 50%;
-  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: grey transparent transparent transparent;
-}
-.lds-ring div:nth-child(1) {
-  animation-delay: -0.45s;
-}
-.lds-ring div:nth-child(2) {
-  animation-delay: -0.3s;
-}
-.lds-ring div:nth-child(3) {
-  animation-delay: -0.15s;
-}
-@keyframes lds-ring {
-  0% {
-    transform: rotate(0deg);
+  .fade-enter,
+  .fade-leave-to {
+    opacity: 0;
   }
-  100% {
-    transform: rotate(360deg);
+
+  .name-container {
+    margin-bottom: 16px;
   }
-}
 </style>
